@@ -35,8 +35,6 @@ def handle_command(command, channel, ts, user):
         are valid commands. If so, then acts on the commands. If not,
         returns back what it needs for clarification.
     """
-    response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + \
-               "* command with numbers, delimited by spaces."
     response = None
     for ptr in patterns:
         m = re.findall(ptr, command.replace(' ', ''))
