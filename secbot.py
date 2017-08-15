@@ -36,7 +36,10 @@ def handle_command(command, channel, ts, user):
         returns back what it needs for clarification.
     """
     response = None
+    stop_ptr = False
     for ptr in patterns:
+        if stop_ptr:
+            break
         m = re.findall(ptr, command.replace(' ', ''))
         if m:
             for g in m:
@@ -53,6 +56,7 @@ def handle_command(command, channel, ts, user):
                         response = '@{} DONT POST CREDIT CARDS!!!!11!!!!!!ELEVENTh!!'.format(user_handler)
                     except:
                         response = 'DONT POST CREDIT CARDS!!!!11!!!!!!ELEVENTh!!'
+                    stop_ptr = True
 
     if response:
         slack_client.api_call("chat.postMessage", channel=channel,
