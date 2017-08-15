@@ -38,11 +38,11 @@ def handle_command(command, channel, ts, user):
     response = None
     for ptr in patterns:
         m = re.findall(ptr, command.replace(' ', ''))
-        print(m)
         if m:
             for g in m:
                 c = check(g)
                 if c:
+                    print('[!] Card posted on {}'.format(channel))
                     slack_client.api_call("chat.delete", channel=channel, ts=ts, as_user=True)
 
                     slack_client.api_call("chat.postEphemeral", channel=channel,
@@ -71,7 +71,6 @@ def parse_slack_output(slack_rtm_output):
             #if output and 'text' in output and AT_BOT in output['text']:
                 # return text after the @ mention, whitespace removed
             if output and 'text' in output and output.get('user') and output['user'] != BOT_ID:
-                print(output)
                 if AT_BOT in output['text']:
                     return output['text'].split(AT_BOT)[1].strip().lower(), \
                        output['channel'], output['ts'], output['user']
