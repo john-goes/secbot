@@ -58,16 +58,21 @@ class Handler(BaseHandler):
         if at_bot:
             self.set_job_status('Processing')
 
-            to_remove = message.replace('desligar ', '').replace('terminate ', '').split()
-
             user_handle = self.get_user_handle(user)
+            self.log('@{}: {}'.format(user_handle, message))
+
+            to_remove = [x for x in message.replace('desligar ', '').replace('terminate ', '').split() if '@' not in x]
+
+            if len(to_remove) == 0:
+                self.log('No valid usernames')
+                self.set_job_status('Finished')
+                return
+
 
             if not self.authorized(user_handle, 'Terminator'):
                 self.set_job_status('Unauthorized')
                 self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
                 return False
-
-            self.log('Got request: {}'.format(message))
 
             self.post_message(channel=channel, text='@{} Removendo usuários: {}'.format(user_handle, ', '.join(to_remove)))
 
@@ -77,6 +82,8 @@ class Handler(BaseHandler):
             members_username = {board.id: [x.username for x in members[board.id]] for board in all_boards}
 
             for username in to_remove:
+                if '@' in username:
+                    continue
                 response = '@{} User {} not found at any boards'.format(user_handle, username)
                 removed = False
                 removed_boards = []
@@ -98,6 +105,7 @@ class Handler(BaseHandler):
                             removed = True
                             removed_boards.append('"{}"'.format(board.name))
                             board.remove_member(m)
+                            self.log('User {} removed from board {}'.format(username, board.name))
                         except:
                             self.log(traceback.format_exc())
 
@@ -107,6 +115,7 @@ class Handler(BaseHandler):
                 if response:
                     self.post_message(channel, response)
                 else:
+                    self.log('User {} not found in any boards'.format(username))
                     self.post_message(channel, '@{} User {} not found in any boards'.format(user_handle, username))
 
             self.set_job_status('Finished')

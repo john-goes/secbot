@@ -7,7 +7,7 @@ class Handler(BaseHandler):
 
     patterns = [
         'job status .*',
-        'job log .*',
+        'job logs .*',
         'job list'
     ]
 
@@ -30,16 +30,21 @@ class Handler(BaseHandler):
                     for job in ids:
                         text += '\n#{} status: {}'.format(job, self.bot.get_job_status(job))
                 elif message.startswith('job logs'):
-                    ids = message.replace('job log ', '').split()
-                    text = ''
-                    for job in ids:
-                        logs = self.bot.get_job_log(job)
-                        if not logs:
-                            text += '\n#{} logs: Job not found'.format(job)
-                        else:
-                            text += '\n#{} logs: {}'.format(job, '- \n'.join(self.bot.get_job_log(job)))
-                    else:
-                        text = '@{} You are not authorized to list logs'.format(handle)
+                    try:
+                        ids = message.replace('job logs ', '').split()
+                        text = ''
+                        for job in ids:
+                            try:
+                                logs = self.bot.get_job_log(job)
+                                if not logs:
+                                    text += '\n#{} logs: Job not found'.format(job)
+                                else:
+                                    for log in logs:
+                                        text += '\n#{} logs: [{}] {}'.format(job, log['date'], log['text'])
+                            except:
+                                continue
+                    except:
+                        traceback.print_exc()
                 elif message.startswith('job list'):
                     text = ''
                     d = self.bot.get_jobs()

@@ -194,7 +194,7 @@ class SecBot(object):
                         return output['channel'], output['user'], output['ts'], output['text'].strip().lower(), False
                 elif output and 'subtype' in output and output['subtype'] == 'message_changed':
                     if self.at_bot in output['message']['text']:
-                        return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].split(self.at_bot)[1].strip().lower(), False
+                        return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].split(self.at_bot)[1].strip().lower(), True
                     else:
                         return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].strip().lower(), False
         return None, None, None, None, None

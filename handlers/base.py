@@ -35,14 +35,16 @@ class BaseHandler(object):
     def set_job_status(self, status):
         try:
             self.bot.jobs[self.job_id]['status'] = status
+            self.add_job_log(status)
         except:
             pass
 
     def set_job_end(self, date):
         self.bot.jobs[self.job_id]['end'] = date
 
-    def add_job_log(self, log):
-        self.bot.jobs[self.job_id]['log'].append(log)
+    def add_job_log(self, date, log):
+        obj = {'date': date, 'text': log}
+        self.bot.jobs[self.job_id]['log'].append(obj)
 
 
     def process(self, channel, user, ts, message, at_bot, extra=None):
@@ -80,10 +82,11 @@ class BaseHandler(object):
         return username
 
     def log(self, text):
+        date = datetime.now()
         text = '[{}#{}] {}'.format(self.name, self.job_id, text)
         if self.job_id != '0':
-            self.add_job_log(text)
-        print(text)
+            self.add_job_log(date, text)
+        print(date, text)
 
     def eligible(self, text):
         matches = set()

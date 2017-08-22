@@ -20,18 +20,22 @@ class Handler(BaseHandler):
     def process(self, channel, user, ts, message, at_bot, extra):
         self.set_job_status('Processing')
         response = None
+
+        handle = self.get_user_handle(user)
+
         for g in extra:
             c = self.check(g)
             if c:
-                self.log('Card posted on {}'.format(channel))
+                self.log('Card posted on {} by {}'.format(channel, handle))
                 self.delete(channel=channel, ts=ts)
+                self.log('Message deleted')
 
                 self.post_ephemeral(channel=channel, user=user,
                         text="O PCI determina que dados sensíveis de cartão (PAN e CVV) não devem ser compartilhados em mídias como email, SMS, Slack, Telegram, Whatsapp e outros IMs. Por favor, respeite essa regra.")
 
                 response = 'Sua Violação do PCI  X  minha Regex Pica, os dois a 80 km/h, tu acha que vai ficar um do lado do outro? Creio que não.'
                 try:
-                    response = '@{} {}'.format(self.get_user_handle(user), response)
+                    response = '@{} {}'.format(handle, response)
                 except:
                     pass
 
