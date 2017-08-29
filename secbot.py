@@ -186,22 +186,26 @@ class SecBot(object):
             this parsing function returns None unless a message is
             directed at the Bot, based on its ID.
         """
-        output_list = slack_rtm_output
-        if output_list and len(output_list) > 0:
-            for output in output_list:
-                #if output and 'text' in output and AT_BOT in output['text']:
-                    # return text after the @ mention, whitespace removed
-                if output and 'text' in output and 'user' in output and output['user'] != self.id:
-                    if self.at_bot in output['text']:
-                        return output['channel'], output['user'], output['ts'], output['text'].split(self.at_bot)[1].strip().lower(), True
-                    else:
-                        return output['channel'], output['user'], output['ts'], output['text'].strip().lower(), False
-                elif output and 'subtype' in output and output['subtype'] == 'message_changed':
-                    if self.at_bot in output['message']['text']:
-                        return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].split(self.at_bot)[1].strip().lower(), True
-                    else:
-                        return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].strip().lower(), False
-        return None, None, None, None, None
+        try:
+            output_list = slack_rtm_output
+            if output_list and len(output_list) > 0:
+                for output in output_list:
+                    #if output and 'text' in output and AT_BOT in output['text']:
+                        # return text after the @ mention, whitespace removed
+                    if output and 'text' in output and 'user' in output and output['user'] != self.id:
+                        if self.at_bot in output['text']:
+                            return output['channel'], output['user'], output['ts'], output['text'].split(self.at_bot)[1].strip().lower(), True
+                        else:
+                            return output['channel'], output['user'], output['ts'], output['text'].strip().lower(), False
+                    elif output and 'subtype' in output and output['subtype'] == 'message_changed':
+                        if self.at_bot in output['message']['text']:
+                            return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].split(self.at_bot)[1].strip().lower(), True
+                        else:
+                            return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].strip().lower(), False
+            return None, None, None, None, None
+        except:
+            traceback.print_exc()
+            return None, None, None, None, None
 
     @setInterval(10)
     def join_channels(self):

@@ -14,11 +14,12 @@ from handlers.base import BaseHandler
 
 class Handler(BaseHandler):
 
-    name = 'Trello Terminator'
+    name = 'Trello'
 
     patterns = [
         'desligar .*',
-        'terminate .*'
+        'terminate .*',
+        'trello terminate .*',
     ]
 
     def __init__(self, bot, slack, api_key=None, api_secret=None, oauth_token=None, oauth_secret=None):

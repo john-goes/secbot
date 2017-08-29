@@ -12,11 +12,12 @@ from handlers.base import BaseHandler
 
 class Handler(BaseHandler):
 
-    name = 'Logentries Terminator'
+    name = 'Logentries'
 
     patterns = [
         'desligar .*',
-        'terminate .*'
+        'terminate .*',
+        'logentries terminate .*',
     ]
 
     def __init__(self, bot, slack, api_key=None, api_key_id=None, account_id=None):
