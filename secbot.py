@@ -58,7 +58,11 @@ class SecBot(object):
         self.executor = ThreadPoolExecutor()
         #self.executor = ProcessPoolExecutor()
 
-    def write_config(self):
+    def get_config(self, section, key):
+        return self.config[section][key]
+
+    def write_config(self, section, key, value):
+        self.config[section][key] = value
         with open(self.config_path, 'w') as f:
             self.config.write(f)
 

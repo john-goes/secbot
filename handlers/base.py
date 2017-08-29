@@ -24,7 +24,7 @@ class BaseHandler(object):
         if handle == self.master:
             return True
         else:
-            authorized = self.bot.config[section.lower()]['AllowedUsers'].split()
+            authorized = self.bot.get_config(section.lower(), 'allowedusers').split()
             if handle in authorized:
                 return True
         return False

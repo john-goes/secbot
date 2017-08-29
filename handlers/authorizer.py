@@ -33,12 +33,11 @@ class Handler(BaseHandler):
                         users = text.split('to users')[1].strip().split()
 
                         for section in sections:
-                            cur = self.bot.config[section]['AllowedUsers'].split()
+                            cur = self.bot.get_config(section, 'allowedusers').split()
                             for u in users:
                                 if u not in cur:
                                     cur.append(u)
-                            self.bot.config[section]['AllowedUsers'] = ' '.join(cur)
-                        self.bot.write_config()
+                            self.bot.write_config(section, 'allowedusers', ' '.join(cur))
 
                         self.post_message(channel=channel, text='@{} Users {} have been added to sections {}'.format(handle, users, section))
 
@@ -49,19 +48,18 @@ class Handler(BaseHandler):
 
 
                         for section in sections:
-                            cur = self.bot.config[section]['AllowedUsers'].split()
+                            cur = self.bot.get_config(section, 'allowedusers').split()
                             for u in users:
                                 if u in cur:
                                     cur.remove(u)
-                            self.bot.config[section]['AllowedUsers'] = ' '.join(cur)
-                        self.bot.write_config()
+                            self.bot.write_config(section, 'allowedusers', ' '.join(cur))
 
                         self.post_message(channel=channel, text='@{} Users {} have been removed from sections {}'.format(handle, users, section))
 
                     elif message.startswith('auth list'):
                         text = '@{}'.format(handle)
                         for section in self.bot.config.keys():
-                            if section != 'DEFAULT':
+                            if section != 'DEFAULT' and 'allowedusers' in self.bot.config[section]:
                                 try:
                                     text += '\n[{}] AllowedUsers: {}'.format(section, ', '.join(self.bot.config[section]['AllowedUsers'].split()))
                                 except:
