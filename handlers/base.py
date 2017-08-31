@@ -100,7 +100,7 @@ class BaseHandler(object):
                         if isinstance(g, tuple):
                             for x in g:
                                 if bool(x):
-                                    print('[+] {} matched with {}'.format(x, self.name))
+                                    #print('[+] {} matched with {}'.format(x, self.name))
                                     matches.add(x)
                                     matched = True
                         else:
