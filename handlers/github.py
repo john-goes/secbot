@@ -98,8 +98,6 @@ class Handler(BaseHandler):
                 if command in ['desligar', 'terminate']:
                     self.set_job_status('Processing')
 
-                    user_handle = self.get_user_handle(user)
-
                     self.log('@{}: {}'.format(user_handle, message))
 
                     to_remove = [x for x in kwargs['users'].split() if '@' not in x]
@@ -141,6 +139,11 @@ class Handler(BaseHandler):
                             self.log(traceback.format_exc())
                             continue
                 elif command == 'allow nomfa':
+                    if not self.authorized(user_handle, 'Authorizer'):
+                        self.set_job_status('Unauthorized')
+                        self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
+                        return False
+
                     to_allow = [x for x in kwargs['users'].split() if '@' not in x]
 
                     tpl = self.bot.get_config(self.config_section, 'nomfa').split()
@@ -153,6 +156,11 @@ class Handler(BaseHandler):
                     self.post_message(channel, '@{} usuários adicionados à lista de exclusões de MFA: {}'.format(user_handle, ' '.join(to_allow)))
 
                 elif command == 'deny nomfa':
+                    if not self.authorized(user_handle, 'Authorizer'):
+                        self.set_job_status('Unauthorized')
+                        self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
+                        return False
+
                     to_deny = [x for x in kwargs['users'].split() if '@' not in x]
 
                     tpl = [x for x in self.bot.get_config(self.config_section, 'nomfa').split() if x not in to_deny]

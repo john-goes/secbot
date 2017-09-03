@@ -60,6 +60,11 @@ class Handler(BaseHandler):
             if command in ['desligar', 'terminate']:
                 self.set_job_status('Processing')
 
+                if not self.authorized(user_handle, 'Terminator'):
+                    self.set_job_status('Unauthorized')
+                    self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
+                    return False
+
                 user_handle = self.get_user_handle(user)
                 self.log('@{}: {}'.format(user_handle, message))
 
@@ -70,10 +75,6 @@ class Handler(BaseHandler):
                     self.set_job_status('Finished')
                     return
 
-                if not self.authorized(user_handle, 'Terminator'):
-                    self.set_job_status('Unauthorized')
-                    self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
-                    return False
 
                 self.post_message(channel=channel, text='@{} Removendo usuários: {}'.format(user_handle, ', '.join(to_remove)))
 

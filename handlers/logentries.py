@@ -87,20 +87,20 @@ class Handler(BaseHandler):
 
     def process(self, channel, user, ts, message, at_bot, command, **kwargs):
         if at_bot:
+            user_handle = self.get_user_handle(user)
+
             if command in ['desligar', 'terminate']:
                 self.set_job_status('Processing')
-
-                to_remove = [x for x in kwargs['users'].split() if '@' in x]
-
-                user_handle = self.get_user_handle(user)
-
-                self.log('@{}: {}'.format(user_handle, message))
 
                 if not self.authorized(user_handle, 'Terminator'):
                     self.set_job_status('Unauthorized')
                     self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
                     return False
 
+                to_remove = [x for x in kwargs['users'].split() if '@' in x]
+
+
+                self.log('@{}: {}'.format(user_handle, message))
 
                 self.post_message(channel=channel, text='@{} Removendo usuários: {}'.format(user_handle, ', '.join(to_remove)))
 
