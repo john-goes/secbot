@@ -14,10 +14,10 @@ class Handler(BaseHandler):
 
     name = 'Logentries'
 
+    prefix = 'logentries'
+
     patterns = [
-        'desligar .*',
-        'terminate .*',
-        'logentries terminate .*',
+        (['desligar .*', 'terminate .*', '{prefix} terminate .*'], 'Desliga um funcionário'),
     ]
 
     def __init__(self, bot, slack, api_key=None, api_key_id=None, account_id=None):

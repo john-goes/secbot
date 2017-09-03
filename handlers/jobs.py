@@ -5,10 +5,12 @@ class Handler(BaseHandler):
 
     name = 'Jobs'
 
+    prefix = 'job'
+
     patterns = [
-        'job status .*',
-        'job logs .*',
-        'job list'
+        (['{prefix} status .*'], 'Obtém o status das jobs .*'),
+        (['{prefix} logs .*'], 'Obtém os logs das jobs .*'),
+        (['{prefix} list'], 'Obtém a lista de jobs .*'),
     ]
 
     def __init__(self, bot, slack):

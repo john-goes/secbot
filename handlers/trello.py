@@ -16,10 +16,10 @@ class Handler(BaseHandler):
 
     name = 'Trello'
 
+    prefix = 'trello'
+
     patterns = [
-        'desligar .*',
-        'terminate .*',
-        'trello terminate .*',
+        (['desligar .*', 'terminate .*', '{prefix} terminate .*'], 'Desliga um funcionário'),
     ]
 
     def __init__(self, bot, slack, api_key=None, api_secret=None, oauth_token=None, oauth_secret=None):

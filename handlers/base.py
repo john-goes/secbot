@@ -17,8 +17,9 @@ class BaseHandler(object):
 
         self.directed = False
 
-
         self.master = os.environ.get('MASTER_USER', 'kamushadenes')
+
+        self.patterns.append((['{prefix} help'], 'Ajuda'))
 
     def authorized(self, handle, section):
         if handle == self.master:
@@ -49,6 +50,21 @@ class BaseHandler(object):
 
     def process(self, channel, user, ts, message, at_bot, extra=None):
         raise NotImplemented
+
+    def pre_process(self, channel, user, ts, message, at_bot, extra=None):
+        if hasattr(self, 'prefix'):
+            if message == '{prefix} help'.format(prefix=self.prefix):
+                self.help(channel, user, ts, message, at_bot, extra)
+        else:
+            self.process(channel, user, ts, message, at_bot, extra)
+
+    def help(self, channel, user, ts, message, at_bot, extra=None):
+        handle = self.get_user_handle(user)
+        text = '@{} '.format(handle)
+        for ptrc in self.patterns:
+            if type(ptrc) == tuple:
+                text += '\n`{} - {}`'.format([x.format(prefix=self.prefix).replace('*', '*') for x in ptrc[0]], ptrc[1])
+        self.post_message(channel, text)
 
     def delete(self, channel, ts):
         if self.bot.mode == 'slacker':
@@ -88,25 +104,32 @@ class BaseHandler(object):
             self.add_job_log(date, text)
         print(date, text)
 
+
     def eligible(self, text):
         matches = set()
         try:
             start = datetime.now()
             matched = False
-            for ptr in self.patterns:
-                m = re.findall(ptr, text)
-                if m:
-                    for g in m:
-                        if isinstance(g, tuple):
-                            for x in g:
-                                if bool(x):
-                                    #print('[+] {} matched with {}'.format(x, self.name))
-                                    matches.add(x)
-                                    matched = True
-                        else:
-                            print('[+] {} matched with {}'.format(g, self.name))
-                            matches.add(g)
-                            matched = True
+            for ptrc in self.patterns:
+                if type(ptrc) == tuple:
+                    ptrl = ptrc[0]
+                else:
+                    ptrl = [ptrc]
+                for ptr in ptrl:
+                    ptr = ptr.format(prefix=self.prefix)
+                    m = re.findall(ptr, text)
+                    if m:
+                        for g in m:
+                            if isinstance(g, tuple):
+                                for x in g:
+                                    if bool(x):
+                                        #print('[+] {} matched with {}'.format(x, self.name))
+                                        matches.add(x)
+                                        matched = True
+                            else:
+                                print('[+] {} matched with {}'.format(g, self.name))
+                                matches.add(g)
+                                matched = True
             if matched and self.job_id != '0':
                 self.bot.jobs[self.job_id] = {'id': self.job_id, 'status': 'Initializing', 'log': [], 'handler': 'Generic', 'start': start, 'end': None}
                 self.set_job_handler()

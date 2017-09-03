@@ -6,10 +6,12 @@ class Handler(BaseHandler):
 
     name = 'Authorizer'
 
+    prefix = 'auth'
+
     patterns = [
-        'auth add .* to users .*',
-        'auth del .* to users .*',
-        'auth list'
+        (['{prefix} add .* to users .*'], 'Adiciona a permissão .* para os usuários .*'),
+        (['{prefix} del .* to users .*'], 'Remove a permissão .* para os usuários .*'),
+        (['{prefix} list'], 'Lista as permissões'),
     ]
 
     def __init__(self, bot, slack):

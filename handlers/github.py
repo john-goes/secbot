@@ -13,13 +13,15 @@ class Handler(BaseHandler):
 
     name = 'GitHub'
 
+    prefix = 'github'
+
     patterns = [
-        'desligar .*',
-        'terminate .*',
-        'github terminate .*',
-        'github allow nomfa .*',
-        'github deny nomfa .*',
-        'github list nomfa',
+        (['desligar .*', 'terminate .*', '{prefix} terminate .*'], 'Desliga um funcionário'),
+        (['{prefix} allow nomfa .*'], 'Permite que um usuário não tenha MFA habilitado'),
+        (['{prefix} deny nomfa .*'], 'Nega que um usuário não tenha MFA habilitado'),
+        (['{prefix} list nomfa'], 'Lista os usuários sem MFA'),
+        (['{prefix} list members'], 'Lista todos os membros da org'),
+        (['{prefix} list owners'], 'Lista todos os owners da org'),
     ]
 
     def __init__(self, bot, slack, login=None, password=None, org=None):
@@ -62,10 +64,10 @@ class Handler(BaseHandler):
             if p not in self.bot.get_config(self.config_section, 'owners').split():
                 added_owners.append(p)
         if added_owners:
-            self.post_message('#seguranca', '@here Usuários adicionados como OWNER na org {}: {}'.format(self.org.name, ', '.join(added_owners)))
+            self.post_message('#security_logs', '@here Usuários adicionados como OWNER na org {}: {}'.format(self.org.name, ', '.join(added_owners)))
             self.bot.write_config(self.config_section, 'owners', ' '.join(owners_list))
         if removed_owners:
-            self.post_message('#seguranca', '@here Usuários removidos como OWNER da org {}: {}'.format(self.org.name, ', '.join(removed_owners)))
+            self.post_message('#security_logs', '@here Usuários removidos como OWNER da org {}: {}'.format(self.org.name, ', '.join(removed_owners)))
             self.bot.write_config(self.config_section, 'owners', ' '.join(owners_list))
 
         added_members = []
@@ -75,18 +77,18 @@ class Handler(BaseHandler):
             if p.login not in self.bot.get_config(self.config_section, 'members').split():
                 added_members.append(p.login)
         if added_members:
-            self.bot.write_config(self.config_section, 'members', ' '.join(members_list))
-            self.post_message('#seguranca', 'Usuários adicionados na org {}: {}'.format(self.org.name, ', '.join(added_members)))
+            self.post_message('#security_logs', 'Usuários adicionados na org {}: {}'.format(self.org.name, ', '.join(added_members)))
         if removed_members:
-            self.post_message('#seguranca', 'Usuários removidos da org {}: {}'.format(self.org.name, ', '.join(removed_members)))
+            self.post_message('#security_logs', 'Usuários removidos da org {}: {}'.format(self.org.name, ', '.join(removed_members)))
+        self.bot.write_config(self.config_section, 'members', ' '.join(members_list))
 
         for p in nomfa:
             if p.login not in self.bot.get_config(self.config_section, 'nomfa').split():
                 try:
                     self.org.remove_from_members(p)
-                    self.post_message('#seguranca', 'Usuário {} foi removido da org {} por não ter 2FA habilitado!'.format(p.login, self.org.name))
+                    self.post_message('#security_logs', 'Usuário {} foi removido da org {} por não ter 2FA habilitado!'.format(p.login, self.org.name))
                 except:
-                    self.post_message('#seguranca', 'Tentei remover o usuário {} da org {} por não ter 2FA habilitado, mas deu ruim!'.format(p.login, self.org.name))
+                    self.post_message('#security_logs', 'Tentei remover o usuário {} da org {} por não ter 2FA habilitado, mas deu ruim!'.format(p.login, self.org.name))
 
 
     def process(self, channel, user, ts, message, at_bot, extra=None):
@@ -161,6 +163,14 @@ class Handler(BaseHandler):
                 elif message.startswith('github list nomfa'):
                     nomfa = [x.login for x in self.org.get_members(filter_='2fa_disabled')]
                     self.post_message(channel, '@{} Usuários sem MFA: {}\nUsuários com permissão de não ter MFA: {}'.format(user_handle, ', '.join(nomfa), ', '.join(self.bot.get_config(self.config_section, 'nomfa').split())))
+                elif message.startswith('github list members'):
+                    members = self.org.get_members(role='all')
+                    members_list = [x.login for x in members]
+                    self.post_message(channel, '@{} Membros da org {}: {}'.format(user_handle, self.org.name, ', '.join(members_list)))
+                elif message.startswith('github list owners'):
+                    owners = self.org.get_members(role='admin')
+                    owners_list = [x.login for x in owners]
+                    self.post_message(channel, '@{} Owners da org {}: {}'.format(user_handle, self.org.name, ', '.join(owners_list)))
 
                 self.set_job_status('Finished')
                 self.set_job_end(datetime.now())

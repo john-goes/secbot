@@ -160,25 +160,39 @@ class SecBot(object):
             are valid commands. If so, then acts on the commands. If not,
             returns back what it needs for clarification.
         """
-        for h in self.handlers:
-            try:
-                if at_bot:
-                    if h.directed:
-                        eligible, matches = h.eligible(message)
-                        if eligible:
-                            self.executor.submit(h.process, channel, user, ts, message, at_bot, extra=list(matches))
-                            #h.process(channel, user, ts, message, at_bot, extra=list(matches))
-                else:
-                    if not h.directed:
-                        eligible, matches = h.eligible(message)
-                        if eligible:
-                            self.executor.submit(h.process, channel, user, ts, message, at_bot, extra=list(matches))
-                            #h.process(channel, user, ts, message, at_bot, extra=list(matches))
-            except:
-                h.log(traceback.format_exc())
-                h.set_job_status('Failed')
-                traceback.print_exc()
-                continue
+        try:
+            if message == 'ping':
+                handle = self.slack.api_call('users.info', user=user)['user']['name']
+                self.slack.api_call('chat.postMessage', channel=channel, text='@{} PONG'.format(handle), as_user=True, link_names=True)
+            elif message == 'help':
+                handle = self.slack.api_call('users.info', user=user)['user']['name']
+                text = '@{} Os seguintes módulos estão disponíveis. Digite `@secbot <module> help` para obter ajuda.'.format(handle)
+                for h in self.handlers:
+                    if hasattr(h, 'prefix'):
+                        text += '\n{}'.format(h.prefix)
+                self.slack.api_call('chat.postMessage', channel=channel, text=text, as_user=True, link_names=True)
+            else:
+                for h in self.handlers:
+                    try:
+                        if at_bot:
+                            if h.directed:
+                                eligible, matches = h.eligible(message)
+                                if eligible:
+                                    self.executor.submit(h.pre_process, channel, user, ts, message, at_bot, extra=list(matches))
+                                    #h.process(channel, user, ts, message, at_bot, extra=list(matches))
+                        else:
+                            if not h.directed:
+                                eligible, matches = h.eligible(message)
+                                if eligible:
+                                    self.executor.submit(h.pre_process, channel, user, ts, message, at_bot, extra=list(matches))
+                                    #h.process(channel, user, ts, message, at_bot, extra=list(matches))
+                    except:
+                        h.log(traceback.format_exc())
+                        h.set_job_status('Failed')
+                        traceback.print_exc()
+                        continue
+        except:
+            traceback.print_exc()
 
     def parse_slack_output(self, slack_rtm_output):
         """

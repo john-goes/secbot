@@ -12,13 +12,15 @@ class Handler(BaseHandler):
 
     name = 'Slack'
 
+    prefix = 'slack'
+
     patterns = [
-        'desligar .*',
-        'terminate .*',
-        'slack terminate .*',
-        'slack allow nomfa .*',
-        'slack deny nomfa .*',
-        'slack list nomfa',
+        (['desligar .*', 'terminate .*', '{prefix} terminate .*'], 'Desliga um funcionário'),
+        (['{prefix} allow nomfa .*'], 'Permite que um usuário não tenha MFA habilitado'),
+        (['{prefix} allow nomfa .*'], 'Permite que um usuário não tenha MFA habilitado'),
+        (['{prefix} allow nomfa .*'], 'Permite que um usuário não tenha MFA habilitado'),
+        (['{prefix} deny nomfa .*'], 'Nega que um usuário não tenha MFA habilitado'),
+        (['{prefix} list nomfa'], 'Lista os usuários sem MFA'),
     ]
 
     def __init__(self, bot, slack):
@@ -59,20 +61,20 @@ class Handler(BaseHandler):
             if p not in self.bot.get_config(self.config_section, 'owners').split():
                 added_owners.append(p)
         if added_owners:
-            self.post_message('#seguranca', '@here Usuários adicionados como OWNER na org {}: {}'.format(self.org['team']['name'], ', '.join(added_owners)))
+            self.post_message('#security_logs', '@here Usuários adicionados como OWNER na org {}: {}'.format(self.org['team']['name'], ', '.join(added_owners)))
             self.bot.write_config(self.config_section, 'owners', ' '.join(owners_list))
         if removed_owners:
-            self.post_message('#seguranca', '@here Usuários removidos como OWNER da org {}: {}'.format(self.org['team']['name'], ', '.join(removed_owners)))
+            self.post_message('#security_logs', '@here Usuários removidos como OWNER da org {}: {}'.format(self.org['team']['name'], ', '.join(removed_owners)))
             self.bot.write_config(self.config_section, 'owners', ' '.join(owners_list))
 
         for p in admins_list:
             if p not in self.bot.get_config(self.config_section, 'admins').split():
                 added_admins.append(p)
         if added_admins:
-            self.post_message('#seguranca', '@here Usuários adicionados como OWNER na org {}: {}'.format(self.org['team']['name'], ', '.join(added_admins)))
+            self.post_message('#security_logs', '@here Usuários adicionados como OWNER na org {}: {}'.format(self.org['team']['name'], ', '.join(added_admins)))
             self.bot.write_config(self.config_section, 'admins', ' '.join(admins_list))
         if removed_admins:
-            self.post_message('#seguranca', '@here Usuários removidos como OWNER da org {}: {}'.format(self.org['team']['name'], ', '.join(removed_admins)))
+            self.post_message('#security_logs', '@here Usuários removidos como OWNER da org {}: {}'.format(self.org['team']['name'], ', '.join(removed_admins)))
             self.bot.write_config(self.config_section, 'admins', ' '.join(admins_list))
 
         for p in members_list:
@@ -80,16 +82,16 @@ class Handler(BaseHandler):
                 added_members.append(p)
         if added_members:
             self.bot.write_config(self.config_section, 'members', ' '.join(members_list))
-            self.post_message('#seguranca', 'Usuários adicionados na org {}: {}'.format(self.org['team']['name'], ', '.join(added_members)))
+            self.post_message('#security_logs', 'Usuários adicionados na org {}: {}'.format(self.org['team']['name'], ', '.join(added_members)))
         if removed_members:
-            self.post_message('#seguranca', 'Usuários removidos da org {}: {}'.format(self.org['team']['name'], ', '.join(removed_members)))
+            self.post_message('#security_logs', 'Usuários removidos da org {}: {}'.format(self.org['team']['name'], ', '.join(removed_members)))
 
 
         nomfa_list = []
         for p in nomfa:
             if p[1] not in self.bot.get_config(self.config_section, 'nomfa').split():
                 nomfa_list.append(p[1])
-        #self.post_message('#seguranca', 'Os seguintes usuários não possuem MFA habiltiado. Infelizmente, não posso removê-los por limitações da API free.\n{}'.format(', '.join(nomfa_list)))
+        #self.post_message('#security_logs', 'Os seguintes usuários não possuem MFA habiltiado. Infelizmente, não posso removê-los por limitações da API free.\n{}'.format(', '.join(nomfa_list)))
 
 
     def process(self, channel, user, ts, message, at_bot, extra=None):
