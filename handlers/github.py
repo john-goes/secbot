@@ -16,12 +16,12 @@ class Handler(BaseHandler):
     prefix = 'github'
 
     patterns = [
-        (['desligar .*', 'terminate .*', '{prefix} terminate .*'], 'Desliga um funcionário'),
-        (['{prefix} allow nomfa .*'], 'Permite que um usuário não tenha MFA habilitado'),
-        (['{prefix} deny nomfa .*'], 'Nega que um usuário não tenha MFA habilitado'),
-        (['{prefix} list nomfa'], 'Lista os usuários sem MFA'),
-        (['{prefix} list members'], 'Lista todos os membros da org'),
-        (['{prefix} list owners'], 'Lista todos os owners da org'),
+        (['(?P<command>desligar) (?P<users>.*)', '(?P<command>terminate) (?P<users>.*)', '{prefix} (?P<command>terminate) (?P<users>.*)'], 'Desliga um funcionário'),
+        (['{prefix} (?P<command>allow nomfa) (?P<users>.*)'], 'Permite que um usuário não tenha MFA habilitado'),
+        (['{prefix} (?P<command>deny nomfa) (?P<users>.*)'], 'Nega que um usuário não tenha MFA habilitado'),
+        (['{prefix} (?P<command>list nomfa)'], 'Lista os usuários sem MFA'),
+        (['{prefix} (?P<command>list members)'], 'Lista todos os membros da org'),
+        (['{prefix} (?P<command>list owners)'], 'Lista todos os owners da org'),
     ]
 
     def __init__(self, bot, slack, login=None, password=None, org=None):
@@ -91,18 +91,18 @@ class Handler(BaseHandler):
                     self.post_message('#security_logs', 'Tentei remover o usuário {} da org {} por não ter 2FA habilitado, mas deu ruim!'.format(p.login, self.org.name))
 
 
-    def process(self, channel, user, ts, message, at_bot, extra=None):
+    def process(self, channel, user, ts, message, at_bot, command=None, **kwargs):
         try:
             if at_bot:
                 user_handle = self.get_user_handle(user)
-                if message.startswith('desligar ') or message.startswith('terminate ') or message.startswith('github terminate '):
+                if command in ['desligar', 'terminate']:
                     self.set_job_status('Processing')
 
                     user_handle = self.get_user_handle(user)
 
                     self.log('@{}: {}'.format(user_handle, message))
 
-                    to_remove = [x for x in message.replace('desligar ', '').replace('github terminate ', '').replace('terminate ', '').split() if '@' not in x]
+                    to_remove = [x for x in kwargs['users'].split() if '@' not in x]
 
                     if len(to_remove) == 0:
                         self.log('No valid usernames')
@@ -140,8 +140,8 @@ class Handler(BaseHandler):
                         except:
                             self.log(traceback.format_exc())
                             continue
-                elif message.startswith('github allow nomfa '):
-                    to_allow = message.replace('github allow nomfa ', '').split()
+                elif command == 'allow nomfa':
+                    to_allow = [x for x in kwargs['users'].split() if '@' not in x]
 
                     tpl = self.bot.get_config(self.config_section, 'nomfa').split()
 
@@ -152,22 +152,25 @@ class Handler(BaseHandler):
 
                     self.post_message(channel, '@{} usuários adicionados à lista de exclusões de MFA: {}'.format(user_handle, ' '.join(to_allow)))
 
-                elif message.startswith('github deny nomfa '):
-                    to_deny = message.replace('github deny nomfa ', '').split()
+                elif command == 'deny nomfa':
+                    to_deny = [x for x in kwargs['users'].split() if '@' not in x]
 
                     tpl = [x for x in self.bot.get_config(self.config_section, 'nomfa').split() if x not in to_deny]
 
                     self.bot.write_config(self.config_section, 'nomfa', ' '.join(tpl))
 
                     self.post_message(channel, '@{} usuários removidos da lista de exclusões de MFA: {}'.format(user_handle, ' '.join(to_deny)))
-                elif message.startswith('github list nomfa'):
+                elif command == 'list nomfa':
                     nomfa = [x.login for x in self.org.get_members(filter_='2fa_disabled')]
                     self.post_message(channel, '@{} Usuários sem MFA: {}\nUsuários com permissão de não ter MFA: {}'.format(user_handle, ', '.join(nomfa), ', '.join(self.bot.get_config(self.config_section, 'nomfa').split())))
-                elif message.startswith('github list members'):
-                    members = self.org.get_members(role='all')
-                    members_list = [x.login for x in members]
-                    self.post_message(channel, '@{} Membros da org {}: {}'.format(user_handle, self.org.name, ', '.join(members_list)))
-                elif message.startswith('github list owners'):
+                elif command == 'list members':
+                    try:
+                        members = self.org.get_members(role='all')
+                        members_list = [x.login for x in members]
+                        self.post_message(channel, '@{} Membros da org {}: {}'.format(user_handle, self.org.name, ', '.join(members_list)))
+                    except Exception as e:
+                        print(str(e))
+                elif command == 'list owners':
                     owners = self.org.get_members(role='admin')
                     owners_list = [x.login for x in owners]
                     self.post_message(channel, '@{} Owners da org {}: {}'.format(user_handle, self.org.name, ', '.join(owners_list)))

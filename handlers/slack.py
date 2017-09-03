@@ -15,12 +15,12 @@ class Handler(BaseHandler):
     prefix = 'slack'
 
     patterns = [
-        (['desligar .*', 'terminate .*', '{prefix} terminate .*'], 'Desliga um funcionário'),
-        (['{prefix} allow nomfa .*'], 'Permite que um usuário não tenha MFA habilitado'),
-        (['{prefix} allow nomfa .*'], 'Permite que um usuário não tenha MFA habilitado'),
-        (['{prefix} allow nomfa .*'], 'Permite que um usuário não tenha MFA habilitado'),
-        (['{prefix} deny nomfa .*'], 'Nega que um usuário não tenha MFA habilitado'),
-        (['{prefix} list nomfa'], 'Lista os usuários sem MFA'),
+        (['(?P<command>desligar) (?P<users>.*)', '(?P<command>terminate) (?P<users>.*)', '{prefix} (?P<command>terminate) (?P<users>.*)'], 'Desliga um funcionário'),
+        (['{prefix} (?P<command>allow nomfa) (?P<users>.*)'], 'Permite que um usuário não tenha MFA habilitado'),
+        (['{prefix} (?P<command>allow nomfa) (?P<users>.*)'], 'Permite que um usuário não tenha MFA habilitado'),
+        (['{prefix} (?P<command>allow nomfa) (?P<users>.*)'], 'Permite que um usuário não tenha MFA habilitado'),
+        (['{prefix} (?P<command>deny nomfa) (?P<users>.*)'], 'Nega que um usuário não tenha MFA habilitado'),
+        (['{prefix} (?P<command>list nomfa)'], 'Lista os usuários sem MFA'),
     ]
 
     def __init__(self, bot, slack):
@@ -40,7 +40,12 @@ class Handler(BaseHandler):
     @setInterval(30)
     def get_members(self):
 
-        members = self.slack.api_call('users.list')['members']
+        m = self.slack.api_call('users.list')
+
+        try:
+            members = m['members']
+        except:
+            print(m)
         # == False prevents None from matching with "not x"
         nomfa = [(x['id'], x['name']) for x in members if x.get('has_2fa') == False]
 
@@ -94,18 +99,19 @@ class Handler(BaseHandler):
         #self.post_message('#security_logs', 'Os seguintes usuários não possuem MFA habiltiado. Infelizmente, não posso removê-los por limitações da API free.\n{}'.format(', '.join(nomfa_list)))
 
 
-    def process(self, channel, user, ts, message, at_bot, extra=None):
+    def process(self, channel, user, ts, message, at_bot, command, **kwargs):
+        print(command)
         try:
             if at_bot:
                 user_handle = self.get_user_handle(user)
-                if message.startswith('desligar ') or message.startswith('terminate ') or message.startswith('slack terminate '):
+                if command in ['desligar', 'terminate']:
                     self.set_job_status('Processing')
 
                     user_handle = self.get_user_handle(user)
 
                     self.log('@{}: {}'.format(user_handle, message))
 
-                    to_remove = [x for x in message.replace('desligar ', '').replace('slack terminate ', '').replace('terminate ', '').split() if '@' not in x]
+                    to_remove = [x for x in kwargs['users'] if '@' not in x]
 
                     if len(to_remove) == 0:
                         self.log('No valid usernames')
@@ -119,8 +125,8 @@ class Handler(BaseHandler):
 
                     self.post_message(channel=channel, text='@{} Não posso remover usuários no Slack devido à limitações da API free'.format(user_handle))
 
-                elif message.startswith('slack allow nomfa '):
-                    to_allow = message.replace('slack allow nomfa ', '').split()
+                elif command == 'allow nomfa':
+                    to_allow = [x for x in kwargs['users'] if '@' not in x]
 
                     tpl = self.bot.get_config(self.config_section, 'nomfa').split()
 
@@ -131,15 +137,15 @@ class Handler(BaseHandler):
 
                     self.post_message(channel, '@{} usuários adicionados à lista de exclusões de MFA: {}'.format(user_handle, ' '.join(to_allow)))
 
-                elif message.startswith('slack deny nomfa '):
-                    to_deny = message.replace('slack deny nomfa ', '').split()
+                elif command == 'deny nomfa':
+                    to_deny = [x for x in kwargs['users'] if '@' not in x]
 
                     tpl = [x for x in self.bot.get_config(self.config_section, 'nomfa').split() if x not in to_deny]
 
                     self.bot.write_config(self.config_section, 'nomfa', ' '.join(tpl))
 
                     self.post_message(channel, '@{} usuários removidos da lista de exclusões de MFA: {}'.format(user_handle, ' '.join(to_deny)))
-                elif message.startswith('slack list nomfa'):
+                elif command == 'list nomfa':
                     members = self.slack.api_call('users.list')['members']
                     nomfa = [x['name'] for x in members if x.get('has_2fa') == False]
                     self.post_message(channel, '@{} Usuários sem MFA: {}\nUsuários com permissão de não ter MFA: {}'.format(user_handle, ', '.join(nomfa), ', '.join(self.bot.get_config(self.config_section, 'nomfa').split())))

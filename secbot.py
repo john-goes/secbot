@@ -121,9 +121,8 @@ class SecBot(object):
                     channel, user, ts, message, at_bot = self.parse_slack_output(self.slack.rtm.read())
                     if message and channel:
                         self.executor.submit(self.handle_command, channel, user, ts, message, at_bot)
-                        #self.handle_command(channel, user, ts, message)
+                        #self.handle_command(channel, user, ts, message, at_bot)
                     time.sleep(self.websocket_delay)
-
 
 
         if self.mode == 'slackclient':
@@ -133,8 +132,8 @@ class SecBot(object):
                 while True:
                     channel, user, ts, message, at_bot = self.parse_slack_output(self.slack.rtm_read())
                     if message and channel:
-                        #self.executor.submit(self.handle_command, channel, user, ts, message, at_bot)
-                        self.handle_command(channel, user, ts, message, at_bot)
+                        self.executor.submit(self.handle_command, channel, user, ts, message, at_bot)
+                        #self.handle_command(channel, user, ts, message, at_bot)
                     time.sleep(self.websocket_delay)
             else:
                 print("[!] Connection failed. Invalid Slack token or bot ID?")
@@ -174,18 +173,10 @@ class SecBot(object):
             else:
                 for h in self.handlers:
                     try:
-                        if at_bot:
-                            if h.directed:
-                                eligible, matches = h.eligible(message)
-                                if eligible:
-                                    self.executor.submit(h.pre_process, channel, user, ts, message, at_bot, extra=list(matches))
-                                    #h.process(channel, user, ts, message, at_bot, extra=list(matches))
-                        else:
-                            if not h.directed:
-                                eligible, matches = h.eligible(message)
-                                if eligible:
-                                    self.executor.submit(h.pre_process, channel, user, ts, message, at_bot, extra=list(matches))
-                                    #h.process(channel, user, ts, message, at_bot, extra=list(matches))
+                        eligible, matches, command, kwargs = h.eligible(message)
+                        if eligible:
+                            self.executor.submit(h.pre_process, channel, user, ts, message, at_bot, command, **kwargs)
+                            #h.pre_process(channel, user, ts, message, at_bot, command, **kwargs)
                     except:
                         h.log(traceback.format_exc())
                         h.set_job_status('Failed')

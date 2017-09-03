@@ -17,7 +17,7 @@ class Handler(BaseHandler):
     prefix = 'logentries'
 
     patterns = [
-        (['desligar .*', 'terminate .*', '{prefix} terminate .*'], 'Desliga um funcionário'),
+        (['(?P<command>desligar) (?P<users>.*)', '(?P<command>)terminate (?P<users>.*)', '{prefix} (?P<command>)terminate (?P<users>.*)'], 'Desliga um funcionário'),
     ]
 
     def __init__(self, bot, slack, api_key=None, api_key_id=None, account_id=None):
@@ -85,31 +85,32 @@ class Handler(BaseHandler):
 
         return True if r.status_code == 200 else False
 
-    def process(self, channel, user, ts, message, at_bot, extra=None):
+    def process(self, channel, user, ts, message, at_bot, command, **kwargs):
         if at_bot:
-            self.set_job_status('Processing')
+            if command in ['desligar', 'terminate']:
+                self.set_job_status('Processing')
 
-            to_remove = [x.split(':')[1].split('|')[0].strip() for x in message.replace('desligar ', '').replace('terminate ', '').split() if '@' in x]
+                to_remove = [x for x in kwargs['users'].split() if '@' in x]
 
-            user_handle = self.get_user_handle(user)
+                user_handle = self.get_user_handle(user)
 
-            self.log('@{}: {}'.format(user_handle, message))
+                self.log('@{}: {}'.format(user_handle, message))
 
-            if not self.authorized(user_handle, 'Terminator'):
-                self.set_job_status('Unauthorized')
-                self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
-                return False
+                if not self.authorized(user_handle, 'Terminator'):
+                    self.set_job_status('Unauthorized')
+                    self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
+                    return False
 
 
-            self.post_message(channel=channel, text='@{} Removendo usuários: {}'.format(user_handle, ', '.join(to_remove)))
+                self.post_message(channel=channel, text='@{} Removendo usuários: {}'.format(user_handle, ', '.join(to_remove)))
 
-            for username in to_remove:
-                try:
-                    self.delete_user(username)
-                    self.log('Deleted user {}'.format(username))
-                except:
-                    self.log(traceback.format_exc())
-                    continue
+                for username in to_remove:
+                    try:
+                        self.delete_user(username)
+                        self.log('Deleted user {}'.format(username))
+                    except:
+                        self.log(traceback.format_exc())
+                        continue
 
             self.set_job_status('Finished')
             self.set_job_end(datetime.now())

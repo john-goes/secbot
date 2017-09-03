@@ -31,7 +31,7 @@ class Handler(BaseHandler):
     dall.update(**number_english)
     dall.update(**number_spanish)
 
-    def process(self, channel, user, ts, message, at_bot, extra):
+    def process(self, channel, user, ts, message, at_bot, command, **kwargs):
         self.set_job_status('Processing')
         response = None
 

@@ -9,9 +9,9 @@ class Handler(BaseHandler):
     prefix = 'auth'
 
     patterns = [
-        (['{prefix} add .* to users .*'], 'Adiciona a permissão .* para os usuários .*'),
-        (['{prefix} del .* to users .*'], 'Remove a permissão .* para os usuários .*'),
-        (['{prefix} list'], 'Lista as permissões'),
+        (['{prefix} (?P<command>add) (?P<permissions>.*) to users (?P<users>.*)'], 'Adiciona a permissão .* para os usuários .*'),
+        (['{prefix} (?P<command>del) (?P<permissions>.*) to users (?P<users>.*)'], 'Remove a permissão .* para os usuários .*'),
+        (['{prefix} (?P<command>list)'], 'Lista as permissões'),
     ]
 
     def __init__(self, bot, slack):
@@ -21,7 +21,7 @@ class Handler(BaseHandler):
 
         #self.job_id = '0'
 
-    def process(self, channel, user, ts, message, at_bot, extra):
+    def process(self, channel, user, ts, message, at_bot, command, **kwargs):
         try:
             if at_bot:
                 self.set_job_status('Processing')
@@ -29,10 +29,10 @@ class Handler(BaseHandler):
                 text = None
 
                 if self.authorized(handle, 'Authorizer'):
-                    if message.startswith('auth add '):
-                        text = message.replace('auth add ', '')
-                        sections = text.split('to users')[0].strip().split()
-                        users = text.split('to users')[1].strip().split()
+                    if command == 'add':
+
+                        sections = kwargs['permissions'].split()
+                        users = kwargs['users'].split()
 
                         for section in sections:
                             cur = self.bot.get_config(section, 'allowedusers').split()
@@ -43,10 +43,9 @@ class Handler(BaseHandler):
 
                         self.post_message(channel=channel, text='@{} Users {} have been added to sections {}'.format(handle, users, section))
 
-                    elif message.startswith('auth del '):
-                        text = message.replace('auth del ', '')
-                        sections = text.split('to users')[0].strip().split()
-                        users = text.split('to users')[1].strip().split()
+                    elif command == 'del':
+                        sections = kwargs['permissions'].split()
+                        users = kwargs['users'].split()
 
 
                         for section in sections:
@@ -58,7 +57,7 @@ class Handler(BaseHandler):
 
                         self.post_message(channel=channel, text='@{} Users {} have been removed from sections {}'.format(handle, users, section))
 
-                    elif message.startswith('auth list'):
+                    elif command == 'list':
                         text = '@{}'.format(handle)
                         for section in self.bot.config.keys():
                             if section != 'DEFAULT' and 'allowedusers' in self.bot.config[section]:

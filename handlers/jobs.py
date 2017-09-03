@@ -8,9 +8,9 @@ class Handler(BaseHandler):
     prefix = 'job'
 
     patterns = [
-        (['{prefix} status .*'], 'Obtém o status das jobs .*'),
-        (['{prefix} logs .*'], 'Obtém os logs das jobs .*'),
-        (['{prefix} list'], 'Obtém a lista de jobs .*'),
+        (['{prefix} (?P<command>status) (?P<jobs>.*)'], 'Obtém o status das jobs .*'),
+        (['{prefix} (?P<command>logs) (?P<jobs>.*)'], 'Obtém os logs das jobs .*'),
+        (['{prefix} (?P<command>list)'], 'Obtém a lista de jobs .*'),
     ]
 
     def __init__(self, bot, slack):
@@ -20,20 +20,20 @@ class Handler(BaseHandler):
 
         self.job_id = '0'
 
-    def process(self, channel, user, ts, message, at_bot, extra):
+    def process(self, channel, user, ts, message, at_bot, command, **kwargs):
         if at_bot:
             handle = self.get_user_handle(user)
             text = None
 
             if self.authorized(handle, 'jobs'):
-                if message.startswith('job status'):
-                    ids = message.replace('job status ', '').split()
+                if command == 'status':
+                    ids = kwargs['jobs'].split()
                     text = ''
                     for job in ids:
                         text += '\n#{} status: {}'.format(job, self.bot.get_job_status(job))
-                elif message.startswith('job logs'):
+                elif command == 'logs':
                     try:
-                        ids = message.replace('job logs ', '').split()
+                        ids = kwargs['jobs'].split()
                         text = ''
                         for job in ids:
                             try:
@@ -47,7 +47,7 @@ class Handler(BaseHandler):
                                 continue
                     except:
                         traceback.print_exc()
-                elif message.startswith('job list'):
+                elif command == 'list':
                     text = ''
                     d = self.bot.get_jobs()
                     for job in d:

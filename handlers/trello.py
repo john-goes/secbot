@@ -19,7 +19,7 @@ class Handler(BaseHandler):
     prefix = 'trello'
 
     patterns = [
-        (['desligar .*', 'terminate .*', '{prefix} terminate .*'], 'Desliga um funcionário'),
+        (['(?P<command>desligar) (?P<users>.*)', '(?P<command>terminate) (?P<users>.*)', '{prefix} (?P<command>terminate) (?P<users>.*)'], 'Desliga um funcionário'),
     ]
 
     def __init__(self, bot, slack, api_key=None, api_secret=None, oauth_token=None, oauth_secret=None):
@@ -55,69 +55,67 @@ class Handler(BaseHandler):
                 return org.id
 
 
-    def process(self, channel, user, ts, message, at_bot, extra=None):
+    def process(self, channel, user, ts, message, at_bot, command, **kwargs):
         if at_bot:
-            self.set_job_status('Processing')
+            if command in ['desligar', 'terminate']:
+                self.set_job_status('Processing')
 
-            user_handle = self.get_user_handle(user)
-            self.log('@{}: {}'.format(user_handle, message))
+                user_handle = self.get_user_handle(user)
+                self.log('@{}: {}'.format(user_handle, message))
 
-            to_remove = [x for x in message.replace('desligar ', '').replace('terminate ', '').split() if '@' not in x]
+                to_remove = [x for x in kwargs['users'].split() if '@' not in x]
 
-            if len(to_remove) == 0:
-                self.log('No valid usernames')
-                self.set_job_status('Finished')
-                return
+                if len(to_remove) == 0:
+                    self.log('No valid usernames')
+                    self.set_job_status('Finished')
+                    return
 
+                if not self.authorized(user_handle, 'Terminator'):
+                    self.set_job_status('Unauthorized')
+                    self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
+                    return False
 
-            if not self.authorized(user_handle, 'Terminator'):
-                self.set_job_status('Unauthorized')
-                self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
-                return False
+                self.post_message(channel=channel, text='@{} Removendo usuários: {}'.format(user_handle, ', '.join(to_remove)))
 
-            self.post_message(channel=channel, text='@{} Removendo usuários: {}'.format(user_handle, ', '.join(to_remove)))
+                all_boards = self.org.get_boards({'fields': 'id'})
+                members = {board.id: board.all_members() for board in all_boards}
 
-            all_boards = self.org.get_boards({'fields': 'id'})
-            members = {board.id: board.all_members() for board in all_boards}
+                members_username = {board.id: [x.username for x in members[board.id]] for board in all_boards}
 
-            members_username = {board.id: [x.username for x in members[board.id]] for board in all_boards}
+                for username in to_remove:
+                    response = '@{} User {} not found at any boards'.format(user_handle, username)
+                    removed = False
+                    removed_boards = []
 
-            for username in to_remove:
-                if '@' in username:
-                    continue
-                response = '@{} User {} not found at any boards'.format(user_handle, username)
-                removed = False
-                removed_boards = []
+                    m = None
+                    for mm in members:
+                        if members[mm].username == username:
+                            m = mm
+                            break
 
-                m = None
-                for mm in members:
-                    if members[mm].username == username:
-                        m = mm
-                        break
+                    if m == None:
+                        self.log('User {} doesn\'t exists'.format(username))
+                        continue
 
-                if m == None:
-                    self.log('User {} doesn\'t exists'.format(username))
-                    continue
+                    for board in all_boards:
+                        if username in members_username[board.id]:
+                            try:
+                                self.log('Found {} at board {}'.format(username, board.name))
+                                removed = True
+                                removed_boards.append('"{}"'.format(board.name))
+                                board.remove_member(m)
+                                self.log('User {} removed from board {}'.format(username, board.name))
+                            except:
+                                self.log(traceback.format_exc())
 
-                for board in all_boards:
-                    if username in members_username[board.id]:
-                        try:
-                            self.log('Found {} at board {}'.format(username, board.name))
-                            removed = True
-                            removed_boards.append('"{}"'.format(board.name))
-                            board.remove_member(m)
-                            self.log('User {} removed from board {}'.format(username, board.name))
-                        except:
-                            self.log(traceback.format_exc())
+                    if removed:
+                        response = '@{} User {} removed from boards {}'.format(user_handle, username, ', '.join(removed_boards))
 
-                if removed:
-                    response = '@{} User {} removed from boards {}'.format(user_handle, username, ', '.join(removed_boards))
-
-                if response:
-                    self.post_message(channel, response)
-                else:
-                    self.log('User {} not found in any boards'.format(username))
-                    self.post_message(channel, '@{} User {} not found in any boards'.format(user_handle, username))
+                    if response:
+                        self.post_message(channel, response)
+                    else:
+                        self.log('User {} not found in any boards'.format(username))
+                        self.post_message(channel, '@{} User {} not found in any boards'.format(user_handle, username))
 
             self.set_job_status('Finished')
             self.set_job_end(datetime.now())

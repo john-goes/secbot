@@ -19,7 +19,7 @@ class BaseHandler(object):
 
         self.master = os.environ.get('MASTER_USER', 'kamushadenes')
 
-        self.patterns.append((['{prefix} help'], 'Ajuda'))
+        self.patterns.append((['{prefix} (?P<command>help)'], 'Ajuda'))
 
     def authorized(self, handle, section):
         if handle == self.master:
@@ -48,17 +48,16 @@ class BaseHandler(object):
         self.bot.jobs[self.job_id]['log'].append(obj)
 
 
-    def process(self, channel, user, ts, message, at_bot, extra=None):
+    def process(self, channel, user, ts, message, at_bot, command, **kwargs):
         raise NotImplemented
 
-    def pre_process(self, channel, user, ts, message, at_bot, extra=None):
-        if hasattr(self, 'prefix'):
-            if message == '{prefix} help'.format(prefix=self.prefix):
-                self.help(channel, user, ts, message, at_bot, extra)
+    def pre_process(self, channel, user, ts, message, at_bot, command, **kwargs):
+        if command == 'help':
+            self.help(channel, user, ts, message, at_bot, command, **kwargs)
         else:
-            self.process(channel, user, ts, message, at_bot, extra)
+            self.process(channel, user, ts, message, at_bot, command, **kwargs)
 
-    def help(self, channel, user, ts, message, at_bot, extra=None):
+    def help(self, channel, user, ts, message, at_bot, command, **kwargs):
         handle = self.get_user_handle(user)
         text = '@{} '.format(handle)
         for ptrc in self.patterns:
@@ -107,6 +106,8 @@ class BaseHandler(object):
 
     def eligible(self, text):
         matches = set()
+        command = None
+        d = {}
         try:
             start = datetime.now()
             matched = False
@@ -116,24 +117,23 @@ class BaseHandler(object):
                 else:
                     ptrl = [ptrc]
                 for ptr in ptrl:
-                    ptr = ptr.format(prefix=self.prefix)
-                    m = re.findall(ptr, text)
+                    if hasattr(self, 'prefix'):
+                        ptr = ptr.format(prefix=self.prefix)
+                    m = re.search(ptr, text)
+                    #m = re.findall(ptr, text)
                     if m:
-                        for g in m:
-                            if isinstance(g, tuple):
-                                for x in g:
-                                    if bool(x):
-                                        #print('[+] {} matched with {}'.format(x, self.name))
-                                        matches.add(x)
-                                        matched = True
-                            else:
-                                print('[+] {} matched with {}'.format(g, self.name))
-                                matches.add(g)
-                                matched = True
+                        d = m.groupdict()
+                        command = d.get('command')
+
+                        d.pop('command', None)
+
+                        matches.add(m.group(0))
+                        matched = True
+
             if matched and self.job_id != '0':
                 self.bot.jobs[self.job_id] = {'id': self.job_id, 'status': 'Initializing', 'log': [], 'handler': 'Generic', 'start': start, 'end': None}
                 self.set_job_handler()
-            return matched, matches
+            return matched, matches, command, d
         except:
             traceback.print_exc()
-            return False, None
+            return False, set(), None, {}
