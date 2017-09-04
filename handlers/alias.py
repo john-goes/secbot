@@ -15,6 +15,7 @@ class Handler(BaseHandler):
         (['{prefix} (?P<command>i aint) (?P<aliases>.*)'], 'Remove um alias de você mesmo'),
         (['{prefix} (?P<username>\S+) (?P<command>is) (?P<aliases>.*)'], 'Adiciona um alias ao usuário'),
         (['{prefix} (?P<command>i am) (?P<aliases>.*)'], 'Adiciona um alias a você mesmo'),
+        (['{prefix} (?P<command>who is) (?P<aliases>.*)'], 'Whois'),
     ]
 
     def __init__(self, bot, slack):
@@ -75,6 +76,7 @@ class Handler(BaseHandler):
                     for alias in aliases:
                         if alias in members:
                             self.post_message(channel, '@{} Unauthorized to become {} as this is an Slack username'.format(handle, alias))
+                            continue
                         else:
                             try:
                                 c = self.bot.get_config('alias_reverse', alias)
@@ -82,7 +84,11 @@ class Handler(BaseHandler):
                                     if self.authorized(handle, 'Authorizer'):
                                         self.bot.write_config('alias_reverse', alias, handle)
                                     else:
-                                        self.post_message(channel, '@{} Unauthorized to become {} as the alias already belongs to {}'.format(handle, alias, c))
+                                        if c != '':
+                                            self.post_message(channel, '@{} Unauthorized to become {} as the alias already belongs to {}'.format(handle, alias, c))
+                                            continue
+                                        else:
+                                            self.bot.write_config('alias_reverse', alias, handle)
                             except:
                                 self.bot.write_config('alias_reverse', alias, handle)
 
@@ -94,8 +100,10 @@ class Handler(BaseHandler):
                     for alias in aliases:
                         if alias in members:
                             self.post_message(channel, '@{} Unauthorized to become {} as this is an Slack username'.format(handle, alias))
-                        if alias not in c:
-                            c.append(alias)
+                            continue
+                        else:
+                            if alias not in c:
+                                c.append(alias)
 
                     self.bot.write_config('alias', handle, ' '.join(c))
 
@@ -154,8 +162,25 @@ class Handler(BaseHandler):
                     text = '@{}'.format(handle)
                     c = self.bot.get_config('alias_reverse')
                     for alias in c:
-                        text += '\n{}: {}'.format(alias, c[alias])
+                        if c[alias] and c['alias'] != '':
+                            text += '\n{}: {}'.format(alias, c[alias])
                     self.post_message(channel, text=text)
+                elif command == 'who is':
+                    aliases = [self.strip_mailto(x) for x in kwargs['aliases'].split()]
+                    for alias in aliases:
+                        try:
+                            c = self.bot.get_config('alias', alias).split()
+                            self.post_message(channel, '@{} {} is {}'.format(handle, alias, c))
+                            break
+                        except:
+                            continue
+                    for alias in aliases:
+                        try:
+                            c = self.bot.get_config('alias_reverse', alias)
+                            cc = self.bot.get_config('alias', c).split()
+                            self.post_message(channel, '@{} {} is {}, who is {}'.format(handle, alias, c, cc))
+                        except:
+                            continue
 
 
             self.set_job_status('Finished')
