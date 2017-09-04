@@ -41,7 +41,7 @@ class Handler(BaseHandler):
                                     cur.append(u)
                             self.bot.write_config(section, 'allowedusers', ' '.join(cur))
 
-                        self.post_message(channel=channel, text='@{} Users {} have been added to sections {}'.format(handle, users, section))
+                        self.post_message(channel=channel, text='@{} Users {} have been added to sections {}'.format(handle, users, sections))
 
                     elif command == 'del':
                         sections = kwargs['permissions'].split()
@@ -55,7 +55,7 @@ class Handler(BaseHandler):
                                     cur.remove(u)
                             self.bot.write_config(section, 'allowedusers', ' '.join(cur))
 
-                        self.post_message(channel=channel, text='@{} Users {} have been removed from sections {}'.format(handle, users, section))
+                        self.post_message(channel=channel, text='@{} Users {} have been removed from sections {}'.format(handle, users, sections))
 
                     elif command == 'list':
                         text = '@{}'.format(handle)

@@ -102,6 +102,24 @@ class Handler(BaseHandler):
 
                     to_remove = [x for x in kwargs['users'].split() if '@' not in x]
 
+                    for r in to_remove:
+                        try:
+                            c = self.bot.get_config('alias_reverse', r)
+                            if c:
+                                if c not in to_remove:
+                                    to_remove.append(c)
+                        except:
+                            continue
+
+                    for r in to_remove:
+                        try:
+                            c = self.bot.get_config('alias', r).split()
+                            for x in c:
+                                if x not in to_remove:
+                                    to_remove.append(x)
+                        except:
+                            continue
+
                     if len(to_remove) == 0:
                         self.log('No valid usernames')
                         self.set_job_status('Finished')
