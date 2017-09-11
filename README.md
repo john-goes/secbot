@@ -23,7 +23,7 @@ The bot also facilitates the termination process by automating numerous actions.
 | Logentries  | Missing Owner API Key |
 | Email | Missing |
 | VPN | Missing |
-| Slack | Missing |
+| Slack | Working |
 | Hubspot | Missing |
 | Zendesk | Missing |
 | Telegram | Missing |
