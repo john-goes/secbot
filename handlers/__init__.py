@@ -1,1 +1,1 @@
-__all__ = ['jobs', 'credit_card', 'github', 'trello', 'authorizer', 'logentries', 'slack', 'alias']
+__all__ = ['jobs', 'credit_card', 'github', 'trello', 'authorizer', 'logentries', 'slack', 'alias', 'aws']
