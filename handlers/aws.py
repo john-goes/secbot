@@ -11,7 +11,7 @@ class Handler(BaseHandler):
 
     patterns = [
         (['{prefix} (?P<command>list instances)'], 'Obtém a lista das instâncias e suas roles'),
-        (['{prefix} (?P<command>whois) (?P<address>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'], 'Obtém a role da máquina <address>'),
+        (['{prefix} (?P<command>whoisip) (?P<address>\S+)'], 'Obtém a role da máquina <address>'),
         (['{prefix} (?P<command>whois) (?P<name>\S+)'], 'Obtém os IPs das máquinas com a role <name>'),
     ]
 
@@ -30,39 +30,46 @@ class Handler(BaseHandler):
             handle = self.get_user_handle(user)
             text = None
 
-            obj = client.describe_instances()
+            obj = self.client.describe_instances()
 
             instances = {}
             instances_reverse = {}
 
             for res in obj['Reservations']:
                 for instance in res['Instances']:
-                    name = [x.get('Value') for x in instance['Tags'] if x.get('Key') == 'Name']
-                    ips = []
+                    name = [x.get('Value') for x in instance.get('Tags', []) if x.get('Key') == 'Name']
                     for net in instance['NetworkInterfaces']:
                         try:
-                            ips.append(net['PrivateIpAddress'])
-                            instances[net['PrivateIpAddress']] = name[0]
+                            if name:
+                                if not name[0] in instances_reverse:
+                                    instances_reverse[name[0]] = []
+                                instances_reverse[name[0]].append(net['PrivateIpAddress'])
+                            if name:
+                                instances[net['PrivateIpAddress']] = name[0]
+                            else:
+                                instances[net['PrivateIpAddress']] = 'UNNAMED'
                         except:
                             continue
-                    instances_reverse[name[0]] = ips
 
             if command == 'list instances':
-                msg = '@{}'.format(handle)
+                msg = '@{}\n'.format(handle)
                 for instance in instances.keys():
                     msg += '{} - {}\n'.format(instance, instances[instance])
                 self.post_message(channel, text=msg)
-            elif command == 'whois':
+            elif command == 'whoisip':
                 if 'address' in kwargs:
-                    if kwargs['address'] in instances:
-                        self.post_message(channel, text='@{} A máquina {} possui a role {}'.format(handle, kwargs['address'], instances[kwargs['address']]))
-                    else:
-                        self.post_message(channel, text='@{} Máquina desconhecida: {}'.format(handle, kwargs['address']))
-                elif 'name' in kwargs:
+                    for addr in kwargs['address'].split():
+                        if addr in instances:
+                            self.post_message(channel, text='@{} A máquina {} possui a role {}'.format(handle, addr, instances[addr]))
+                        else:
+                            self.post_message(channel, text='@{} Máquina desconhecida: {}'.format(handle, addr))
+            elif command == 'whois':
+                if 'name' in kwargs:
                     found = False
-                    for key in instances_reverse.keys():
-                        if kwargs['name'] in key:
-                            self.post_message(channel, text='@{} A role {} possui os IPs {}'.format(handle, key, instances_reverse[key]))
-                            found = True
-                    if not found:
-                        self.post_message(channel, text='@{} Role desconhecida: {}'.format(handle, kwargs['name']))
+                    for name in kwargs['name'].split():
+                        for key in instances_reverse.keys():
+                            if name in key:
+                                self.post_message(channel, text='@{} A role {} possui os IPs {}'.format(handle, key, instances_reverse[key]))
+                                found = True
+                        if not found:
+                            self.post_message(channel, text='@{} Role desconhecida: {}'.format(handle, name))
