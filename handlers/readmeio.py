@@ -80,7 +80,7 @@ class Handler(BaseHandler):
                             if change['_id'] not in slug_changes:
                                 try:
                                     page_url = 'https://dash.readme.io/project/{subdomain}/v{version}/docs/{slug}'.format(subdomain=project['subdomain'], version=ver, slug=page['slug'])
-                                    self.post_message('#security_logs', text='Alteração na Documentação: Página `{}` ({}) editada por `{}` ({}) @ {}'.format(page['title'], page_url, change['user']['name'], change['user']['email'], change['createdAt']))
+                                    self.post_message('#security_logs', text='Alteração na documentação da versão {}: Página `{}` ({}) editada por `{}` ({}) @ {}'.format(ver, page['title'], page_url, change['user']['name'], change['user']['email'], change['createdAt']))
                                 except:
                                     traceback.print_exc()
                                 finally:
