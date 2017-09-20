@@ -12,29 +12,29 @@ The bot automatically joins any created channel.
 
 Any time the bot detects a LUHN-valid card posted in public chats, it removes the message and scolds the user.
 
-### Termination
+### Integration
 
-The bot also facilitates the termination process by automating numerous actions.
-
-| Service | Status  |
-|---------|---------|
-| GitHub  | Working |
-| Trello  | Working |
-| Logentries  | Missing Owner API Key |
-| Email | Missing |
-| VPN | Missing |
-| Slack | Working |
-| Hubspot | Missing |
-| Zendesk | Missing |
-| Telegram | Missing |
-| Looker | Missing|
-| Whatsapp | Missing |
-| Sentry | Missing |
-| Newrelic | Missing |
+| Service | Status  | Functions |
+|---------|---------|-----------|
+| 99Taxi | Missing | - |
+| AWS | Working | Instance lookup |
+| Cabify | Missing| - |
+| Email | Missing | - |
+| GitHub  | Working | Termination, MFA Enforcement |
+| Hubspot | Missing | - |
 | Jira/Confluence | Missing |
-| Uber | Missing |
-| 99Taxi | Missing |
-| Cabify | Missing|
+| Logentries  | Working | Termination |
+| Looker | Missing | - |
+| Newrelic | Missing | - |
+| Readme.io | Working | Change reporting |
+| Sentry | Missing | - |
+| Slack | Working | Termination, MFA Enforcement |
+| Telegram | Missing | - |
+| Trello  | Working | Termination |
+| Uber | Missing | - |
+| VPN | Missing | - |
+| Whatsapp | Missing | - |
+| Zendesk | Missing | - |
 
 ### Job logging
 
