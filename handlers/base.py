@@ -55,7 +55,10 @@ class BaseHandler(object):
         if command == 'help':
             self.help(channel, user, ts, message, at_bot, command, **kwargs)
         else:
-            self.process(channel, user, ts, message, at_bot, command, **kwargs)
+            try:
+                self.process(channel, user, ts, message, at_bot, command, **kwargs)
+            except:
+                traceback.print_exc()
 
     def help(self, channel, user, ts, message, at_bot, command, **kwargs):
         handle = self.get_user_handle(user)

@@ -58,6 +58,11 @@ class SecBot(object):
         self.executor = ThreadPoolExecutor()
         #self.executor = ProcessPoolExecutor()
 
+    def create_config_section(self, section):
+        self.config.add_section(section)
+        with open(self.config_path, 'w') as f:
+            self.config.write(f)
+
     def get_config(self, section, key=None):
         if key:
             return self.config[section][key]
