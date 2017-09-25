@@ -14,7 +14,8 @@ class Handler(BaseHandler):
     prefix = 'tinyletter'
 
     patterns = [
-        (['{prefix} (?P<command>list subscribers) (?P<username>\S+)'], 'Obtém a lista de subscribers de <username>'),
+        (['{prefix} (?P<command>list newsletters)'], 'Obtém a lista de newsletters'),
+        (['{prefix} (?P<command>list subscribers) (?P<username>\S+)'], 'Obtém a lista de subscribers da newsletter <username>'),
         (['{prefix} (?P<command>remove subscriber) (?P<username>\S+) (?P<email>\S+)'], 'Remove <email> da newsletter <username>'),
     ]
 
@@ -96,7 +97,11 @@ class Handler(BaseHandler):
             handle = self.get_user_handle(user)
             text = None
 
-            if command == 'list subscribers':
+            if command == 'list newsletters':
+
+                self.post_message(channel, text='@{} TinyLetter Newsletters: {}'.format(handle, ', '.join(self.sessions.keys())))
+
+            elif command == 'list subscribers':
                 username = kwargs['username']
 
                 subscribers = [x['email'] for x in self.sessions[username]['session'].get_subscribers()]
