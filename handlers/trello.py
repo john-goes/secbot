@@ -58,6 +58,9 @@ class Handler(BaseHandler):
     def process(self, channel, user, ts, message, at_bot, command, **kwargs):
         if at_bot:
             if command in ['desligar', 'terminate']:
+                user_handle = self.get_user_handle(user)
+                self.log('@{}: {}'.format(user_handle, message))
+
                 self.set_job_status('Processing')
 
                 if not self.authorized(user_handle, 'Terminator'):
@@ -65,8 +68,6 @@ class Handler(BaseHandler):
                     self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
                     return False
 
-                user_handle = self.get_user_handle(user)
-                self.log('@{}: {}'.format(user_handle, message))
 
                 to_remove = [x for x in kwargs['users'].split() if '@' not in x]
 
@@ -88,6 +89,7 @@ class Handler(BaseHandler):
                     except:
                         continue
 
+                print(to_remove)
                 if len(to_remove) == 0:
                     self.log('No valid usernames')
                     self.set_job_status('Finished')
@@ -101,6 +103,7 @@ class Handler(BaseHandler):
 
                 members_username = {board.id: [x.username for x in members[board.id]] for board in all_boards}
 
+
                 for username in to_remove:
                     response = '@{} User {} not found at any boards'.format(user_handle, username)
                     removed = False
@@ -108,13 +111,24 @@ class Handler(BaseHandler):
 
                     m = None
                     for mm in members:
-                        if members[mm].username == username:
-                            m = mm
-                            break
+                        if isinstance(members[mm], list):
+                            for member in members[mm]:
+                                if member.username == username:
+                                    m = member
+                                    break
+                        else:
+                            if members[mm].username == username:
+                                m = mm
+                                break
 
                     if m == None:
                         self.log('User {} doesn\'t exists'.format(username))
                         continue
+
+                    try:
+                        self.client.fetch_json('/organizations/{}/members/{}'.format(self.org_id, m.id), http_method='DELETE')
+                    except:
+                        traceback.print_exc()
 
                     for board in all_boards:
                         if username in members_username[board.id]:
@@ -125,6 +139,7 @@ class Handler(BaseHandler):
                                 board.remove_member(m)
                                 self.log('User {} removed from board {}'.format(username, board.name))
                             except:
+                                self.post_message(channel, 'Failed to remove {} from board {}'.format(username, board.name))
                                 self.log(traceback.format_exc())
 
                     if removed:

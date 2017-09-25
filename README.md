@@ -33,7 +33,7 @@ Any time the bot detects a LUHN-valid card posted in public chats, it removes th
 | Trello  | Working | Termination |
 | Uber | Missing | - |
 | VPN | Missing | - |
-| Whatsapp | Missing | - |
+| Whatsapp | Working | - |
 | Zendesk | Missing | - |
 
 ### Job logging
