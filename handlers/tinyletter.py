@@ -104,7 +104,8 @@ class Handler(BaseHandler):
                 self.post_message(channel, text='@{} Subscribers for username {}: {}'.format(handle, username, ', '.join(subscribers)))
 
             elif command == 'remove subscriber':
-                emails = kwargs['email'].split()
+                username = kwargs['username']
+                emails = [x.split(':')[1].split('|')[0] for x in kwargs['email'].split()]
 
                 subscribers = {x['email']: x['__id'] for x in self.sessions[username]['session'].get_subscribers()}
 
@@ -113,8 +114,11 @@ class Handler(BaseHandler):
                     if subscribers.get(email):
                         to_delete.append(subscribers[email])
 
-                try:
-                    self.sessions[username]['session'].request('delete:Contact', to_delete)
-                except:
-                    traceback.print_exc()
-                    pass
+                for d in to_delete:
+                    try:
+                        self.sessions[username]['session'].request('delete:Contact', [d])
+                    except:
+                        traceback.print_exc()
+                        pass
+
+                self.post_message(channel, '@{} Inscritos removidos da newsletter `{}`: {}'.format(handle, username, ', '.join(emails)))
