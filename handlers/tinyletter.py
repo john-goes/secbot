@@ -15,6 +15,7 @@ class Handler(BaseHandler):
 
     patterns = [
         (['{prefix} (?P<command>list subscribers) (?P<username>\S+)'], 'Obtém a lista de subscribers de <username>'),
+        (['{prefix} (?P<command>remove subscriber) (?P<username>\S+) (?P<email>\S+)'], 'Remove <email> da newsletter <username>'),
     ]
 
     def __init__(self, bot, slack, combolist=None):
@@ -101,3 +102,19 @@ class Handler(BaseHandler):
                 subscribers = [x['email'] for x in self.sessions[username]['session'].get_subscribers()]
 
                 self.post_message(channel, text='@{} Subscribers for username {}: {}'.format(handle, username, ', '.join(subscribers)))
+
+            elif command == 'remove subscriber':
+                emails = kwargs['email'].split()
+
+                subscribers = {x['email']: x['__id'] for x in self.sessions[username]['session'].get_subscribers()}
+
+                to_delete = []
+                for email in emails:
+                    if subscribers.get(email):
+                        to_delete.append(subscribers[email])
+
+                try:
+                    self.sessions[username]['session'].request('delete:Contact', to_delete)
+                except:
+                    traceback.print_exc()
+                    pass
