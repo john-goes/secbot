@@ -30,6 +30,7 @@ Any time the bot detects a LUHN-valid card posted in public chats, it removes th
 | Sentry | Missing | - |
 | Slack | Working | Termination, MFA Enforcement |
 | Telegram | Missing | - |
+| TinyLetter | Working | Subscriber Domain Validation, Subscriber Removal |
 | Trello  | Working | Termination |
 | Uber | Missing | - |
 | VPN | Missing | - |
