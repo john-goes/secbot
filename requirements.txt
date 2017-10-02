@@ -24,7 +24,7 @@ protobuf==3.4.0
 ptyprocess==0.5.2
 py-trello==0.9.0
 pycrypto==2.6.1
-PyGithub==1.35
+-e git+https://github.com/kamushadenes/PyGithub@64ec973362590b47910f4963bdbfd0d783ce3be3#egg=PyGithub
 Pygments==2.2.0
 PyJWT==1.5.2
 python-axolotl==0.1.39
@@ -39,6 +39,7 @@ simplegeneric==0.8.1
 six==1.11.0
 -e git+https://github.com/kamushadenes/python-slackclient.git@709701697c36a7b4032ab1bc43289b46c2c06bad#egg=slackclient
 slacker==0.9.60
+tinyapi==0.1.0
 traitlets==4.3.2
 urllib3==1.22
 wcwidth==0.1.7

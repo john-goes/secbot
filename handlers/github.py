@@ -17,6 +17,7 @@ class Handler(BaseHandler):
 
     patterns = [
         (['(?P<command>desligar) (?P<users>.*)', '(?P<command>terminate) (?P<users>.*)', '{prefix} (?P<command>terminate) (?P<users>.*)'], 'Desliga um funcionário'),
+        (['{prefix} (?P<command>add user) (?P<users>.*)'], 'Adiciona usuários na Org'),
         (['{prefix} (?P<command>allow nomfa) (?P<users>.*)'], 'Permite que um usuário não tenha MFA habilitado'),
         (['{prefix} (?P<command>deny nomfa) (?P<users>.*)'], 'Nega que um usuário não tenha MFA habilitado'),
         (['{prefix} (?P<command>list nomfa)'], 'Lista os usuários sem MFA'),
@@ -156,6 +157,29 @@ class Handler(BaseHandler):
                         except:
                             self.log(traceback.format_exc())
                             continue
+                elif command == 'add user':
+                    if not self.authorized(user_handle, 'Authorizer'):
+                        self.set_job_status('Unauthorized')
+                        self.post_message(channel=channel, text='@{} Unauthorized'.format(user_handle))
+                        return False
+
+                    to_allow = [x for x in kwargs['users'].split() if '@' not in x]
+
+                    for username in to_allow:
+                            try:
+                                m = self.client.get_user(username)
+                            except:
+                                self.log('User {} doesn\'t exists'.format(username))
+                                self.post_message(channel,  '@{} User {} doesn\'t exists'.format(user_handle, username))
+                                continue
+
+                            try:
+                                self.org.add_membership(m)
+                            except:
+                                traceback.print_exc()
+
+                    self.post_message(channel, '@{} usuários adicionados à org: {}'.format(user_handle, ' '.join(to_allow)))
+
                 elif command == 'allow nomfa':
                     if not self.authorized(user_handle, 'Authorizer'):
                         self.set_job_status('Unauthorized')
