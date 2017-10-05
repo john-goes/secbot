@@ -48,6 +48,8 @@ class Handler(BaseHandler):
 
         self.set_job_status('Initialized')
 
+        self.loop_count = 0
+
     @setInterval(30)
     def get_members(self):
 
