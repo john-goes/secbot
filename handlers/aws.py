@@ -97,7 +97,7 @@ class Handler(BaseHandler):
                         if 'name' in kwargs:
                             for name in kwargs['name'].split():
                                 for key in instances_reverse.keys():
-                                    if name in key:
+                                    if name in key.lower():
                                         self.post_message(channel, text='@{} A role `{}` está na conta `{}`, região `{}` e possui os IPs `{}`'.format(handle, key, account, region, instances_reverse[key]))
                                         found = True
                 if not found:
@@ -141,7 +141,7 @@ class Handler(BaseHandler):
                         found = False
                         for name in kwargs['name'].split():
                             for key in instances_reverse.keys():
-                                if name in key:
+                                if name in key.lower():
                                     self.post_message(channel, text='@{} A role `{}` possui os IPs `{}`'.format(handle, key, instances_reverse[key]))
                                     found = True
                             if not found:
