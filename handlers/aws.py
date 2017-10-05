@@ -26,7 +26,7 @@ class Handler(BaseHandler):
         self.directed = True
 
         os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
-        os.environ['AWS_DEFAULT_PROFILE'] = 'pagarme-pci-secbot'
+        os.environ['AWS_DEFAULT_PROFILE'] = 'prod'
 
         self.credentials = boto3.Session().available_profiles
         self.regions = boto3.Session().get_available_regions('ec2')
