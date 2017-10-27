@@ -31,14 +31,20 @@ class Handler(BaseHandler):
 
         self.directed = True
 
-        if not login:
-            login = os.environ.get('GITHUB_LOGIN')
         if not password:
-            password = os.environ.get('GITHUB_PASSWORD')
+            password = os.environ.get('GITHUB_PASSWORD', 'NOPWD')
+        if not login:
+            if password == 'NOPWD':
+                login = os.environ.get('GITHUB_TOKEN')
+            else:
+                login = os.environ.get('GITHUB_LOGIN')
         if not org:
             org = os.environ.get('GITHUB_ORGANIZATION')
 
-        self.client = Github(login, password)
+        if password == 'NOPWD':
+            self.client = Github(login)
+        else:
+            self.client = Github(login, password)
 
         self.org = self.client.get_organization(org)
 
