@@ -6,12 +6,12 @@ import traceback
 
 class Handler(BaseHandler):
 
-    name = 'Suicide'
+    name = 'TheEnd'
 
-    prefix = 'suicide'
+    prefix = 'TheEnd'
 
     patterns = [
-        (['(?P<command>suicide)'], 'Die'),
+        (['(?P<command>reborn)'], 'Die'),
         (['(?P<command>die)'], 'Die'),
     ]
 
@@ -46,7 +46,7 @@ class Handler(BaseHandler):
             if at_bot:
                 handle = self.get_user_handle(user)
 
-                if command in ['die', 'suicide']:
+                if command in ['die', 'reborn']:
                     if self.authorized(handle, 'Killer'):
                         self.post_message(channel, random.choice(self.phrases))
                         os._exit(1)

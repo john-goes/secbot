@@ -32,10 +32,14 @@ class Handler(BaseHandler):
         self.sessions = {}
 
         for combo in self.combolist.split():
-            u = combo.split(':')[0]
-            p = combo.split(':')[1]
-            allowed_domains = combo.split(':')[2].split(',')
-            self.sessions[u] = {'session': tinyapi.Session(username=u, password=p), 'allowed_domains': allowed_domains}
+            try:
+                u = combo.split(':')[0]
+                p = combo.split(':')[1]
+                allowed_domains = combo.split(':')[2].split(',')
+                self.sessions[u] = {'session': tinyapi.Session(username=u, password=p), 'allowed_domains': allowed_domains}
+            except:
+                print('Invalid credentials for account {}'.format(u))
+                continue
 
         self.config_section = 'tinyletter'
 
@@ -89,7 +93,8 @@ class Handler(BaseHandler):
                 if denied:
                     self.post_message('#security_logs', 'Inscritos removidos da newsletter `{}` por não estarem nos domínios permitidos: {}'.format(username, ', '.join([x['email'] for x in denied])))
             except:
-                traceback.print_exc()
+                #traceback.print_exc()
+                print('Invalid credentials for account {}'.format(u))
                 continue
 
     def process(self, channel, user, ts, message, at_bot, command, **kwargs):
