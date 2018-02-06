@@ -126,9 +126,9 @@ class SecBot(object):
                 print("[+] SecBot connected and running!")
                 ch_joiner = self.join_channels()
                 while True:
-                    channel, user, ts, message, at_bot = self.parse_slack_output(self.slack.rtm.read())
-                    if message and channel:
-                        self.executor.submit(self.handle_command, channel, user, ts, message, at_bot)
+                    channel, user, ts, message, at_bot, message_type = self.parse_slack_output(self.slack.rtm.read())
+                    if (message and channel) or message_type == 'file_shared':
+                        self.executor.submit(self.handle_command, channel, user, ts, message, at_bot, message_type)
                         #self.handle_command(channel, user, ts, message, at_bot)
                     time.sleep(self.websocket_delay)
 
@@ -138,9 +138,9 @@ class SecBot(object):
                 print("[+] SecBot connected and running!")
                 ch_joiner = self.join_channels()
                 while True:
-                    channel, user, ts, message, at_bot = self.parse_slack_output(self.slack.rtm_read())
-                    if message and channel:
-                        self.executor.submit(self.handle_command, channel, user, ts, message, at_bot)
+                    channel, user, ts, message, at_bot, file_id = self.parse_slack_output(self.slack.rtm_read())
+                    if (message and channel) or file_id:
+                        self.executor.submit(self.handle_command, channel, user, ts, message, at_bot, file_id)
                         #self.handle_command(channel, user, ts, message, at_bot)
                     time.sleep(self.websocket_delay)
             else:
@@ -161,35 +161,47 @@ class SecBot(object):
         else:
             return None
 
-    def handle_command(self, channel, user, ts, message, at_bot):
+    def handle_command(self, channel, user, ts, message, at_bot, file_id = None):
         """
             Receives commands directed at the bot and determines if they
             are valid commands. If so, then acts on the commands. If not,
             returns back what it needs for clarification.
         """
         try:
-            if message == 'ping':
+            if file_id:
                 handle = self.slack.api_call('users.info', user=user)['user']['name']
-                self.slack.api_call('chat.postMessage', channel=channel, text='@{} PONG'.format(handle), as_user=True, link_names=True)
-            elif message == 'help':
-                handle = self.slack.api_call('users.info', user=user)['user']['name']
-                text = '@{} Os seguintes módulos estão disponíveis. Digite `@secbot <module> help` para obter ajuda.'.format(handle)
                 for h in self.handlers:
-                    if hasattr(h, 'prefix'):
-                        text += '\n{}'.format(h.prefix)
-                self.slack.api_call('chat.postMessage', channel=channel, text=text, as_user=True, link_names=True)
+                    if h.name == 'S3 Upload':
+                        try:
+                            self.executor.submit(h.pre_process, channel, user, ts, message, at_bot, None, file_id=file_id)
+                        except:
+                            traceback.print_exc()
+                        break
+
+                pass
             else:
-                for h in self.handlers:
-                    try:
-                        eligible, matches, command, kwargs = h.eligible(message)
-                        if eligible:
-                            self.executor.submit(h.pre_process, channel, user, ts, message, at_bot, command, **kwargs)
-                            #h.pre_process(channel, user, ts, message, at_bot, command, **kwargs)
-                    except:
-                        h.log(traceback.format_exc())
-                        h.set_job_status('Failed')
-                        traceback.print_exc()
-                        continue
+                if message == 'ping':
+                    handle = self.slack.api_call('users.info', user=user)['user']['name']
+                    self.slack.api_call('chat.postMessage', channel=channel, text='@{} PONG'.format(handle), as_user=True, link_names=True)
+                elif message == 'help':
+                    handle = self.slack.api_call('users.info', user=user)['user']['name']
+                    text = '@{} Os seguintes módulos estão disponíveis. Digite `@secbot <module> help` para obter ajuda.'.format(handle)
+                    for h in self.handlers:
+                        if hasattr(h, 'prefix'):
+                            text += '\n{}'.format(h.prefix)
+                    self.slack.api_call('chat.postMessage', channel=channel, text=text, as_user=True, link_names=True)
+                else:
+                    for h in self.handlers:
+                        try:
+                            eligible, matches, command, kwargs = h.eligible(message)
+                            if eligible:
+                                self.executor.submit(h.pre_process, channel, user, ts, message, at_bot, command, **kwargs)
+                                #h.pre_process(channel, user, ts, message, at_bot, command, **kwargs)
+                        except:
+                            h.log(traceback.format_exc())
+                            h.set_job_status('Failed')
+                            traceback.print_exc()
+                            continue
         except:
             traceback.print_exc()
 
@@ -203,22 +215,25 @@ class SecBot(object):
             output_list = slack_rtm_output
             if output_list and len(output_list) > 0:
                 for output in output_list:
+                    if 'type' in output and output['type'] == 'file_shared':
+                        return None, output['user_id'], output['ts'], None, True, output['file_id']
+
                     #if output and 'text' in output and AT_BOT in output['text']:
                         # return text after the @ mention, whitespace removed
                     if output and 'text' in output and 'user' in output and output['user'] != self.id:
                         if self.at_bot in output['text']:
-                            return output['channel'], output['user'], output['ts'], output['text'].split(self.at_bot)[1].strip().lower(), True
+                            return output['channel'], output['user'], output['ts'], output['text'].split(self.at_bot)[1].strip().lower(), True, None
                         else:
-                            return output['channel'], output['user'], output['ts'], output['text'].strip().lower(), False
+                            return output['channel'], output['user'], output['ts'], output['text'].strip().lower(), False, None
                     elif output and 'subtype' in output and output['subtype'] == 'message_changed':
                         if self.at_bot in output['message']['text']:
-                            return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].split(self.at_bot)[1].strip().lower(), True
+                            return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].split(self.at_bot)[1].strip().lower(), True, None
                         else:
-                            return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].strip().lower(), False
-            return None, None, None, None, None
+                            return output['channel'], output['message']['user'], output['message']['ts'], output['message']['text'].strip().lower(), False, None
+            return None, None, None, None, None, None
         except:
             traceback.print_exc()
-            return None, None, None, None, None
+            return None, None, None, None, None, None
 
     @setInterval(10)
     def join_channels(self):

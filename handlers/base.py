@@ -3,6 +3,7 @@ import re
 import traceback
 import uuid
 from datetime import datetime
+import requests
 
 class BaseHandler(object):
 
@@ -79,6 +80,15 @@ class BaseHandler(object):
             self.slack.chat.post_ephemeral(channel=channel, as_user=True, user=user, text=text, link_names=True)
         elif self.bot.mode == 'slackclient':
             self.slack.api_call('chat.postEphemeral', channel=channel, as_user=True, user=user, text=text, link_names=True)
+
+    def download_file(self, file_id):
+        if self.bot.mode ==  'slackclient':
+            f = self.slack.api_call('files.info', file=file_id)['file']
+
+            r = requests.get(f['url_private'], headers={'Authorization': 'Bearer {}'.format(os.environ['SLACK_BOT_TOKEN'])})
+
+            return f['name'], r.content
+
 
     def post_message(self, channel, text):
         text = '[{}#{}] {}'.format(self.name, self.job_id, text)
