@@ -1,4 +1,5 @@
 wheel
+configparser
 beautifulsoup4==4.6.0
 boto3==1.4.7
 botocore==1.7.12
