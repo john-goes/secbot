@@ -1,3 +1,4 @@
+wheel
 beautifulsoup4==4.6.0
 boto3==1.4.7
 botocore==1.7.12
@@ -8,7 +9,7 @@ decorator==4.1.2
 docutils==0.14
 enum34==1.1.6
 idna==2.6
-ipython==6.1.0
+ipython
 ipython-genutils==0.2.0
 jedi==0.10.2
 jmespath==0.9.3
