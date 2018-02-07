@@ -215,8 +215,8 @@ class SecBot(object):
             output_list = slack_rtm_output
             if output_list and len(output_list) > 0:
                 for output in output_list:
-                    if 'type' in output and output['type'] == 'file_shared':
-                        return None, output['user_id'], output['ts'], None, True, output['file_id']
+                    if 'type' in output and output['type'] == 'message' and 'subtype' in output and output['subtype'] == 'file_share' and 'channel' in output and output['channel'].startswith('D'):
+                        return output['channel'], output['user'], output['ts'], None, True, output['file']['id']
 
                     #if output and 'text' in output and AT_BOT in output['text']:
                         # return text after the @ mention, whitespace removed
