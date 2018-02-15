@@ -146,8 +146,8 @@ class Handler(BaseHandler):
                             try:
                                 m = self.client.get_user(username)
                             except:
-                                self.log('User {} doesn\'t exists'.format(username))
-                                self.post_message(channel,  '@{} User {} doesn\'t exists'.format(user_handle, username))
+                                self.log('User {} doesn\'t exist'.format(username))
+                                self.post_message(channel,  '@{} User {} doesn\'t exist'.format(user_handle, username))
                                 continue
 
                             try:
