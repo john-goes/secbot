@@ -14,8 +14,8 @@ class Handler(BaseHandler):
         '3(?:0[0-5]|[68][0-9])[0-9]{11}',
         '6(?:011|5[0-9]{2})[0-9]{12}',
         '(?:2131|1800|35\d{3})\d{11}',
-        '\d{13,16}',
-        '(\d{4,6}.?){4}',
+     #   '\d{13,16}',
+     #   '(\d{4,6}.?){4}',
     ]
 
     def process(self, channel, user, ts, message, at_bot, command, **kwargs):
